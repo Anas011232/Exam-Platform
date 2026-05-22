@@ -98,19 +98,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-6 text-center">
-          <p>
-            Admin Login:
-          </p>
-
-          <p className="font-bold">
-            admin@examplatform.com
-          </p>
-
-          <p className="font-bold">
-            Admin@123
-          </p>
-        </div>
+        
 
         <p className="text-center mt-6">
           Don't have account?{" "}
