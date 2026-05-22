@@ -1,28 +1,25 @@
-const dotenv = require("dotenv");
-const path = require("path");
+import dotenv from "dotenv";
 
-// ১. লোড env সবার আগে (সঠিক পাথ সহ)
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config();
 
-// ২. এরপর বাকি ফাইলগুলো রিকোয়ার করুন
-const { connectDB } = require("./config/db"); // কার্লি ব্র্যাকেট যুক্ত করা হয়েছে
-const app = require("./app");
+import app from "./app.js";
 
-const start = async () => {
-  console.log("⏳ Connecting to MongoDB...");
+import {
+  connectDB,
+} from "./config/db.js";
 
-  try {
-    // ৩. ডাটাবেজ কানেক্ট করা
+const PORT =
+  process.env.PORT || 5000;
+
+const startServer =
+  async () => {
     await connectDB();
 
-    // ৪. সার্ভার লিসেন করা
-    app.listen(5000, () => {
-      console.log("🔥 Server running on port 5000");
+    app.listen(PORT, () => {
+      console.log(
+        `Server Running On ${PORT}`
+      );
     });
-  } catch (error) {
-    console.error("❌ Server failed to start:", error.message);
-    process.exit(1);
-  }
-};
+  };
 
-start();
+startServer();
