@@ -6,14 +6,17 @@ export function middleware(request) {
 
   const { pathname } = request.nextUrl;
 
-  // ❌ Not logged in
+  // ❌ NOT LOGGED IN
   if (!token) {
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
+    if (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin")
+    ) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
 
-  // ❌ Admin only protection
+  // ❌ ADMIN ONLY
   if (pathname.startsWith("/admin")) {
     if (role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));

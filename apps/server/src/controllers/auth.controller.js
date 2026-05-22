@@ -1,20 +1,7 @@
-import {
-  getClient,
-} from "../config/db.js";
-
-import {
-  hashPassword,
-  comparePassword,
-} from "../services/password.service.js";
-
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../services/token.service.js";
-
-import {
-  validateRegistration,
-} from "../utils/validators.js";
+import { getClient } from "../config/db.js";
+import { hashPassword, comparePassword } from "../services/password.service.js";
+import { generateAccessToken, generateRefreshToken } from "../services/token.service.js";
+import { validateRegistration } from "../utils/validators.js";
 
 /* =========================
    REGISTER
@@ -33,14 +20,7 @@ export const register = async (req, res) => {
     const db = getClient().db(process.env.DB_NAME);
     const usersCollection = db.collection("users");
 
-    const {
-      name,
-      className,
-      school,
-      phone,
-      email,
-      password,
-    } = req.body;
+    const { name, className, school, phone, email, password } = req.body;
 
     const existingUser = await usersCollection.findOne({ email });
 
@@ -77,6 +57,22 @@ export const register = async (req, res) => {
       _id: result.insertedId,
     });
 
+    /* 🔥 IMPORTANT: COOKIE FIX */
+    res.cookie("accessToken", accessToken, {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("role", "student", {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    });
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -108,7 +104,7 @@ export const login = async (req, res) => {
     const db = getClient().db(process.env.DB_NAME);
     const usersCollection = db.collection("users");
 
-    /* ADMIN LOGIN */
+    /* ================= ADMIN LOGIN ================= */
     if (email === process.env.ADMIN_EMAIL) {
       const isAdminPasswordCorrect =
         password === process.env.ADMIN_PASSWORD;
@@ -126,6 +122,21 @@ export const login = async (req, res) => {
         role: "admin",
       });
 
+      /* 🔥 ADMIN COOKIE FIX */
+      res.cookie("accessToken", accessToken, {
+        httpOnly: false,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      });
+
+      res.cookie("role", "admin", {
+        httpOnly: false,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+      });
+
       return res.json({
         success: true,
         role: "admin",
@@ -133,7 +144,7 @@ export const login = async (req, res) => {
       });
     }
 
-    /* USER LOGIN */
+    /* ================= USER LOGIN ================= */
     const user = await usersCollection.findOne({ email });
 
     if (!user) {
@@ -143,10 +154,7 @@ export const login = async (req, res) => {
       });
     }
 
-    const isPasswordCorrect = await comparePassword(
-      password,
-      user.password
-    );
+    const isPasswordCorrect = await comparePassword(password, user.password);
 
     if (!isPasswordCorrect) {
       return res.status(401).json({
@@ -157,6 +165,22 @@ export const login = async (req, res) => {
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
+
+    /* 🔥 USER COOKIE FIX */
+    res.cookie("accessToken", accessToken, {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.cookie("role", user.role, {
+      httpOnly: false,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -194,6 +218,8 @@ export const getMe = async (req, res) => {
 ========================= */
 export const logout = async (req, res) => {
   res.clearCookie("refreshToken");
+  res.clearCookie("accessToken");
+  res.clearCookie("role");
 
   return res.json({
     success: true,

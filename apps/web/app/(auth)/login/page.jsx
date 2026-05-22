@@ -418,7 +418,8 @@ export default function LoginPage() {
       // ROLE BASED REDIRECT
       if (role === "admin") {
         router.push("/admin/dashboard");
-      } else {
+      } 
+      if(role === "student"){
         router.push("/dashboard");
       }
 
