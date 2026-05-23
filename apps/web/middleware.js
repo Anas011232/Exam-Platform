@@ -6,26 +6,44 @@ export function middleware(request) {
 
   const { pathname } = request.nextUrl;
 
-  // ❌ NOT LOGGED IN
-  if (!token) {
-    if (
-      pathname.startsWith("/dashboard") ||
-      pathname.startsWith("/admin")
-    ) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  console.log("MIDDLEWARE RUNNING");
+  console.log("PATH:", pathname);
+  console.log("TOKEN:", token);
+  console.log("ROLE:", role);
+
+  // =========================
+  // PROTECTED ROUTES
+  // =========================
+  const isDashboard =
+    pathname.startsWith("/dashboard");
+
+  const isAdmin =
+    pathname.startsWith("/admin");
+
+  // =========================
+  // NOT LOGGED IN
+  // =========================
+  if (!token && (isDashboard || isAdmin)) {
+    return NextResponse.redirect(
+      new URL("/login", request.url)
+    );
   }
 
-  // ❌ ADMIN ONLY
-  if (pathname.startsWith("/admin")) {
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+  // =========================
+  // ADMIN ONLY
+  // =========================
+  if (isAdmin && role !== "admin") {
+    return NextResponse.redirect(
+      new URL("/dashboard", request.url)
+    );
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+  ],
 };

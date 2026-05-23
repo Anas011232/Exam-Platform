@@ -1,39 +1,45 @@
 import api from "../lib/axios";
 
-export const registerUser =
-  async (data) => {
-    const response =
-      await api.post(
-        "/auth/register",
-        data
-      );
+// =========================
+// REGISTER
+// =========================
+export const registerUser = async (data) => {
+  const response = await api.post("/auth/register", data, {
+    withCredentials: true,
+  });
 
-    return response.data;
-  };
+  return response.data;
+};
 
-export const loginUser =
-  async (data) => {
-    const response =
-      await api.post(
-        "/auth/login",
-        data
-      );
+// =========================
+// LOGIN
+// =========================
+export const loginUser = async (data) => {
+  const response = await api.post("/auth/login", data, {
+    withCredentials: true,
+  });
 
-    return response.data;
-  };
+  return response.data;
+};
 
-export const getMe = async (
-  token
-) => {
-  const response =
-    await api.get(
-      "/auth/me",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+// =========================
+// GET ME (COOKIE BASED)
+// =========================
+export const getMe = async () => {
+  const response = await api.get("/auth/me", {
+    withCredentials: true,
+  });
+
+  return response.data;
+};
+
+// =========================
+// LOGOUT
+// =========================
+export const logoutUser = async () => {
+  const response = await api.post("/auth/logout", {}, {
+    withCredentials: true,
+  });
 
   return response.data;
 };

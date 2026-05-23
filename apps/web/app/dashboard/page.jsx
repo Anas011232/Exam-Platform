@@ -1,10 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { logoutUser } from "../../services/auth.service";
 
 export default function DashboardPage() {
+  const router = useRouter();
+
   const [active, setActive] = useState("dashboard");
 
+  // =========================
+  // LOGOUT
+  // =========================
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+
+      // clear local storage
+      localStorage.clear();
+
+      // redirect login
+      router.push("/login");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // =========================
+  // DUMMY DATA
+  // =========================
   const stats = [
     { title: "Total Exams", value: "24" },
     { title: "Attempted", value: "12" },
@@ -28,9 +52,14 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#070A12] text-white flex">
 
-      {/* Sidebar */}
+      {/* =========================
+          SIDEBAR
+      ========================= */}
       <div className="w-64 bg-[#0C1220] border-r border-white/10 p-5">
-        <h1 className="text-2xl font-bold mb-8">Exam Platform</h1>
+
+        <h1 className="text-2xl font-bold mb-8">
+          Exam Platform
+        </h1>
 
         {[
           "dashboard",
@@ -51,43 +80,81 @@ export default function DashboardPage() {
             {item.toUpperCase()}
           </div>
         ))}
+
       </div>
 
-      {/* Main Content */}
+      {/* =========================
+          MAIN CONTENT
+      ========================= */}
       <div className="flex-1 p-8">
 
-        {/* Top Header */}
+        {/* =========================
+            HEADER
+        ========================= */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">Dashboard</h2>
 
-          <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-bold">
+            Dashboard
+          </h2>
+
+          <div className="flex items-center gap-4">
+
             <div className="text-right">
-              <p className="text-sm text-gray-400">Welcome</p>
-              <p className="font-semibold">Student</p>
+              <p className="text-sm text-gray-400">
+                Welcome
+              </p>
+
+              <p className="font-semibold">
+                Student
+              </p>
             </div>
 
             <div className="w-10 h-10 bg-blue-600 rounded-full"></div>
+
+            {/* LOGOUT BUTTON */}
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition font-medium"
+            >
+              Logout
+            </button>
+
           </div>
+
         </div>
 
-        {/* Stats */}
+        {/* =========================
+            STATS
+        ========================= */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+
           {stats.map((s, i) => (
             <div
               key={i}
               className="bg-[#0C1220] p-5 rounded-xl border border-white/10 hover:scale-105 transition"
             >
-              <p className="text-gray-400">{s.title}</p>
-              <h3 className="text-2xl font-bold mt-2">{s.value}</h3>
+              <p className="text-gray-400">
+                {s.title}
+              </p>
+
+              <h3 className="text-2xl font-bold mt-2">
+                {s.value}
+              </h3>
             </div>
           ))}
+
         </div>
 
-        {/* Content Grid */}
+        {/* =========================
+            CONTENT GRID
+        ========================= */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* Exams */}
+          {/* =========================
+              RECENT EXAMS
+          ========================= */}
           <div className="lg:col-span-2 bg-[#0C1220] p-5 rounded-xl border border-white/10">
+
             <h3 className="text-xl font-semibold mb-4">
               Recent Exams
             </h3>
@@ -98,18 +165,28 @@ export default function DashboardPage() {
                 className="flex justify-between items-center p-3 border-b border-white/10"
               >
                 <div>
-                  <p className="font-medium">{e.name}</p>
-                  <p className="text-sm text-gray-400">{e.date}</p>
+                  <p className="font-medium">
+                    {e.name}
+                  </p>
+
+                  <p className="text-sm text-gray-400">
+                    {e.date}
+                  </p>
                 </div>
+
                 <span className="text-green-400 font-bold">
                   {e.score}
                 </span>
               </div>
             ))}
+
           </div>
 
-          {/* Leaderboard */}
+          {/* =========================
+              LEADERBOARD
+          ========================= */}
           <div className="bg-[#0C1220] p-5 rounded-xl border border-white/10">
+
             <h3 className="text-xl font-semibold mb-4">
               Leaderboard
             </h3>
@@ -120,10 +197,15 @@ export default function DashboardPage() {
                 className="flex justify-between p-2 border-b border-white/10"
               >
                 <span>{l.name}</span>
-                <span className="text-blue-400">{l.score}</span>
+
+                <span className="text-blue-400">
+                  {l.score}
+                </span>
               </div>
             ))}
+
           </div>
+
         </div>
 
       </div>
