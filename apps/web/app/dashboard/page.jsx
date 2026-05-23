@@ -2,212 +2,243 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { logoutUser } from "../../services/auth.service";
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [active, setActive] = useState("dashboard");
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedChapters, setSelectedChapters] = useState([]);
+  const [mcqCount, setMcqCount] = useState(30);
+  const [negativeMarking, setNegativeMarking] = useState(false);
+  const [time, setTime] = useState(30);
+  const [loading, setLoading] = useState(false);
+
+  const subjects = [
+    {
+      name: "Physics",
+      icon: "⚛️",
+      color: "from-cyan-500 to-blue-600",
+      chapters: [
+        "Vector",
+        "Newton Law",
+        "Work Power Energy",
+        "Gravity",
+        "Current Electricity",
+      ],
+    },
+    {
+      name: "Chemistry",
+      icon: "🧪",
+      color: "from-pink-500 to-red-600",
+      chapters: [
+        "Porimangoto Roshayon",
+        "Redox",
+        "Organic",
+        "Chemical Bond",
+        "Electro Chemistry",
+      ],
+    },
+    {
+      name: "Biology",
+      icon: "🧬",
+      color: "from-green-500 to-emerald-600",
+      chapters: ["Cell", "DNA", "Human Body", "Plant", "Genetics"],
+    },
+    {
+      name: "Math",
+      icon: "📘",
+      color: "from-violet-500 to-indigo-600",
+      chapters: [
+        "Algebra",
+        "Trigonometry",
+        "Calculus",
+        "Probability",
+        "Coordinate Geometry",
+      ],
+    },
+  ];
 
   // =========================
-  // LOGOUT
+  // chapter toggle
   // =========================
-  const handleLogout = async () => {
-    try {
-      await logoutUser();
-
-      // clear local storage
-      localStorage.clear();
-
-      // redirect login
-      router.push("/login");
-    } catch (error) {
-      console.log(error);
+  const toggleChapter = (chapter) => {
+    if (selectedChapters.includes(chapter)) {
+      setSelectedChapters(selectedChapters.filter((c) => c !== chapter));
+    } else {
+      setSelectedChapters([...selectedChapters, chapter]);
     }
   };
 
   // =========================
-  // DUMMY DATA
+  // START EXAM (REAL FIX)
   // =========================
-  const stats = [
-    { title: "Total Exams", value: "24" },
-    { title: "Attempted", value: "12" },
-    { title: "Avg Score", value: "78%" },
-    { title: "Rank", value: "#5" },
-  ];
+  const handleStartExam = async () => {
+    if (!selectedSubject) return alert("Select Subject");
+    if (selectedChapters.length === 0) return alert("Select Chapter");
 
-  const exams = [
-    { name: "Math Chapter Test", score: "85%", date: "Today" },
-    { name: "Physics Mock Test", score: "72%", date: "Yesterday" },
-    { name: "Chemistry Quiz", score: "90%", date: "2 days ago" },
-  ];
+    try {
+      setLoading(true);
 
-  const leaderboard = [
-    { name: "Rahim", score: 98 },
-    { name: "Karim", score: 95 },
-    { name: "Sakib", score: 92 },
-    { name: "You", score: 88 },
-  ];
+      const payload = {
+        subject: selectedSubject,
+        chapters: selectedChapters,
+        mcqCount,
+        negativeMarking,
+        duration: time, // IMPORTANT FIX
+      };
+
+      const res = await fetch("http://localhost:5000/api/exam/start", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      console.log("EXAM CREATED:", data);
+
+      if (!data.success) {
+        return alert(data.message || "Failed to start exam");
+      }
+
+      // redirect to real exam
+      router.push(`/dashboard/exam/${data.examId}`);
+
+    } catch (error) {
+      console.log(error);
+      alert("Server error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================
+  // LOGOUT
+  // =========================
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
 
   return (
-    <div className="min-h-screen bg-[#070A12] text-white flex">
+    <div className="min-h-screen bg-[#050816] text-white">
 
-      {/* =========================
-          SIDEBAR
-      ========================= */}
-      <div className="w-64 bg-[#0C1220] border-r border-white/10 p-5">
-
-        <h1 className="text-2xl font-bold mb-8">
-          Exam Platform
+      {/* ================= NAVBAR ================= */}
+      <div className="flex justify-between items-center p-6 border-b border-white/10">
+        <h1 className="text-2xl font-black text-blue-400">
+          ExamBattle
         </h1>
 
-        {[
-          "dashboard",
-          "exams",
-          "results",
-          "leaderboard",
-          "settings",
-        ].map((item) => (
-          <div
-            key={item}
-            onClick={() => setActive(item)}
-            className={`p-3 rounded-lg cursor-pointer mb-2 transition ${
-              active === item
-                ? "bg-blue-600"
-                : "hover:bg-white/10"
-            }`}
-          >
-            {item.toUpperCase()}
-          </div>
-        ))}
-
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg"
+        >
+          Logout
+        </button>
       </div>
 
-      {/* =========================
-          MAIN CONTENT
-      ========================= */}
-      <div className="flex-1 p-8">
+      {/* ================= BODY ================= */}
+      <div className="max-w-6xl mx-auto p-6">
 
-        {/* =========================
-            HEADER
-        ========================= */}
-        <div className="flex justify-between items-center mb-8">
+        {/* SUBJECTS */}
+        <h2 className="text-2xl font-bold mb-4">
+          Select Subject
+        </h2>
 
-          <h2 className="text-3xl font-bold">
-            Dashboard
-          </h2>
-
-          <div className="flex items-center gap-4">
-
-            <div className="text-right">
-              <p className="text-sm text-gray-400">
-                Welcome
-              </p>
-
-              <p className="font-semibold">
-                Student
-              </p>
-            </div>
-
-            <div className="w-10 h-10 bg-blue-600 rounded-full"></div>
-
-            {/* LOGOUT BUTTON */}
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition font-medium"
-            >
-              Logout
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* =========================
-            STATS
-        ========================= */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-
-          {stats.map((s, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {subjects.map((s) => (
             <div
-              key={i}
-              className="bg-[#0C1220] p-5 rounded-xl border border-white/10 hover:scale-105 transition"
+              key={s.name}
+              onClick={() => {
+                setSelectedSubject(s.name);
+                setSelectedChapters([]);
+              }}
+              className={`p-4 rounded-xl cursor-pointer border ${
+                selectedSubject === s.name
+                  ? "border-blue-500 bg-blue-500/20"
+                  : "border-white/10"
+              }`}
             >
-              <p className="text-gray-400">
-                {s.title}
-              </p>
-
-              <h3 className="text-2xl font-bold mt-2">
-                {s.value}
-              </h3>
+              <div className="text-3xl">{s.icon}</div>
+              <p className="font-bold">{s.name}</p>
             </div>
           ))}
-
         </div>
 
-        {/* =========================
-            CONTENT GRID
-        ========================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* CHAPTERS */}
+        {selectedSubject && (
+          <>
+            <h2 className="text-xl font-bold mb-3">
+              Select Chapters
+            </h2>
 
-          {/* =========================
-              RECENT EXAMS
-          ========================= */}
-          <div className="lg:col-span-2 bg-[#0C1220] p-5 rounded-xl border border-white/10">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {subjects
+                .find((s) => s.name === selectedSubject)
+                .chapters.map((ch) => (
+                  <div
+                    key={ch}
+                    onClick={() => toggleChapter(ch)}
+                    className={`p-3 rounded-lg cursor-pointer border ${
+                      selectedChapters.includes(ch)
+                        ? "bg-green-600"
+                        : "bg-white/5"
+                    }`}
+                  >
+                    {ch}
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
 
-            <h3 className="text-xl font-semibold mb-4">
-              Recent Exams
-            </h3>
+        {/* CONFIG */}
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
 
-            {exams.map((e, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center p-3 border-b border-white/10"
-              >
-                <div>
-                  <p className="font-medium">
-                    {e.name}
-                  </p>
+          <select
+            value={mcqCount}
+            onChange={(e) => setMcqCount(Number(e.target.value))}
+            className="p-3 bg-black border rounded"
+          >
+            <option value={30}>30 MCQ</option>
+            <option value={40}>40 MCQ</option>
+            <option value={50}>50 MCQ</option>
+          </select>
 
-                  <p className="text-sm text-gray-400">
-                    {e.date}
-                  </p>
-                </div>
+          <select
+            value={time}
+            onChange={(e) => setTime(Number(e.target.value))}
+            className="p-3 bg-black border rounded"
+          >
+            <option value={30}>30 Min</option>
+            <option value={60}>60 Min</option>
+            <option value={90}>90 Min</option>
+          </select>
 
-                <span className="text-green-400 font-bold">
-                  {e.score}
-                </span>
-              </div>
-            ))}
-
-          </div>
-
-          {/* =========================
-              LEADERBOARD
-          ========================= */}
-          <div className="bg-[#0C1220] p-5 rounded-xl border border-white/10">
-
-            <h3 className="text-xl font-semibold mb-4">
-              Leaderboard
-            </h3>
-
-            {leaderboard.map((l, i) => (
-              <div
-                key={i}
-                className="flex justify-between p-2 border-b border-white/10"
-              >
-                <span>{l.name}</span>
-
-                <span className="text-blue-400">
-                  {l.score}
-                </span>
-              </div>
-            ))}
-
-          </div>
-
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={negativeMarking}
+              onChange={() =>
+                setNegativeMarking(!negativeMarking)
+              }
+            />
+            Negative Marking (-0.25)
+          </label>
         </div>
 
+        {/* START BUTTON */}
+        <button
+          onClick={handleStartExam}
+          disabled={loading}
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-lg"
+        >
+          {loading ? "Starting Exam..." : "Start Exam 🚀"}
+        </button>
       </div>
     </div>
   );

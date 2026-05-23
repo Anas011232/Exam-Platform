@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 
 import authRoutes from "./routes/auth.routes.js";
+import examRoutes from "./routes/exam.routes.js";
 
 const app = express();
 
@@ -14,25 +15,25 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(express.json());
 app.use(cookieParser());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-
-app.use(limiter);
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  })
+);
 
 app.get("/", (req, res) => {
   res.send("Server Running");
 });
 
+// ROUTES
 app.use("/api/auth", authRoutes);
+app.use("/api/exam", examRoutes);
 
 export default app;
