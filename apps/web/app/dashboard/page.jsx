@@ -92,11 +92,19 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
+    await fetch("http://localhost:5000/api/auth/logout", {
+      method: "POST",
+      credentials: "include", // 🔥 VERY IMPORTANT
+    });
+
     localStorage.clear();
     router.push("/login");
-  };
-
+  } catch (err) {
+    console.log("Logout error:", err);
+  }
+};
   const selectedSubjectData = subjects.find((s) => s.name === selectedSubject);
 
   const steps = [
