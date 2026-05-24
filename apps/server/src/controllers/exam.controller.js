@@ -1,15 +1,21 @@
-
-// ================= START EXAM =================
 import { ObjectId } from "mongodb";
 import { getClient } from "../config/db.js";
 
+// ================= START EXAM =================
 export const startExam = async (req, res) => {
   try {
-    const { subject, chapters, mcqCount, negativeMarking, duration } = req.body;
+    const {
+      subject,
+      chapters,
+      mcqCount,
+      negativeMarking,
+      duration,
+    } = req.body;
 
     const db = getClient().db(process.env.DB_NAME);
 
-    const questions = await db.collection("questions")
+    const questions = await db
+      .collection("questions")
       .aggregate([
         {
           $match: {
@@ -31,7 +37,9 @@ export const startExam = async (req, res) => {
       createdAt: new Date(),
     };
 
-    const result = await db.collection("live_exams").insertOne(exam);
+    const result = await db
+      .collection("live_exams")
+      .insertOne(exam);
 
     return res.json({
       success: true,
@@ -40,17 +48,24 @@ export const startExam = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to start exam",
+    });
   }
 };
+
 // ================= GET EXAM =================
 export const getExam = async (req, res) => {
   try {
     const db = getClient().db(process.env.DB_NAME);
 
-    const exam = await db.collection("live_exams").findOne({
-      _id: new ObjectId(req.params.id),
-    });
+    const exam = await db
+      .collection("live_exams")
+      .findOne({
+        _id: new ObjectId(req.params.id),
+      });
 
     if (!exam) {
       return res.status(404).json({
@@ -66,10 +81,13 @@ export const getExam = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false });
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
-
 
 // ================= SUBMIT EXAM =================
 export const submitExam = async (req, res) => {
@@ -78,9 +96,11 @@ export const submitExam = async (req, res) => {
 
     const db = getClient().db(process.env.DB_NAME);
 
-    const exam = await db.collection("live_exams").findOne({
-      _id: new ObjectId(examId),
-    });
+    const exam = await db
+      .collection("live_exams")
+      .findOne({
+        _id: new ObjectId(examId),
+      });
 
     if (!exam) {
       return res.status(404).json({
@@ -91,46 +111,87 @@ export const submitExam = async (req, res) => {
 
     let correct = 0;
     let wrong = 0;
+    let skip = 0;
     let score = 0;
 
+    // 🔥 SOLUTION ARRAY
+    const solvedQuestions = [];
+
     exam.questions.forEach((q) => {
+
       const userAns = answers?.[q._id];
 
-      if (!userAns) return;
+      let status = "skip";
 
-      if (userAns === q.correctAnswer) {
-        correct += 1;
-        score += 1;
-      } else {
-        wrong += 1;
-        if (exam.negativeMarking) score -= 0.25;
+      // ================= SKIP =================
+      if (!userAns) {
+        skip++;
       }
+
+      // ================= CORRECT =================
+      else if (userAns === q.correctAnswer) {
+        correct++;
+        score += 1;
+        status = "correct";
+      }
+
+      // ================= WRONG =================
+      else {
+        wrong++;
+        status = "wrong";
+
+        if (exam.negativeMarking) {
+          score -= 0.25;
+        }
+      }
+
+      // 🔥 SAVE SOLUTION DATA
+      solvedQuestions.push({
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        userAnswer: userAns || null,
+        explanation: q.explanation || "",
+        chapter: q.chapter || "",
+        topic: q.topic || "",
+        status,
+      });
     });
 
-    const result = {
+    // ================= RESULT DOC =================
+    const resultDoc = {
       examId,
       subject: exam.subject,
       total: exam.questions.length,
       correct,
       wrong,
-      skipped: exam.questions.length - (correct + wrong),
+      skip,
       score,
+
+      // 🔥 IMPORTANT
+      solutions: solvedQuestions,
+
       createdAt: new Date(),
     };
 
-    const insertResult = await db.collection("exam_result").insertOne(result);
+    // ================= SAVE RESULT =================
+    const saved = await db
+      .collection("exam_results")
+      .insertOne(resultDoc);
 
     return res.json({
       success: true,
-      result: {
-        _id: insertResult.insertedId.toString(),
-        ...result,
-      },
+      resultId: saved.insertedId.toString(),
+      result: resultDoc,
     });
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to submit exam",
+    });
   }
 };
 
@@ -139,9 +200,11 @@ export const getResult = async (req, res) => {
   try {
     const db = getClient().db(process.env.DB_NAME);
 
-    const result = await db.collection("exam_result").findOne({
-      _id: new ObjectId(req.params.id),
-    });
+    const result = await db
+      .collection("exam_results")
+      .findOne({
+        _id: new ObjectId(req.params.id),
+      });
 
     if (!result) {
       return res.status(404).json({
@@ -157,6 +220,10 @@ export const getResult = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ success: false });
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

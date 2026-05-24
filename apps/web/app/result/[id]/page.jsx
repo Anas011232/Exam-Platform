@@ -44,10 +44,10 @@ export default function ResultPage() {
 
   const grade =
     accuracy >= 90 ? { label: "S", color: "#22d3ee", glow: "rgba(34,211,238,0.35)" } :
-    accuracy >= 75 ? { label: "A", color: "#34d399", glow: "rgba(52,211,153,0.35)" } :
-    accuracy >= 60 ? { label: "B", color: "#a78bfa", glow: "rgba(167,139,250,0.35)" } :
-    accuracy >= 45 ? { label: "C", color: "#fbbf24", glow: "rgba(251,191,36,0.35)"  } :
-                     { label: "D", color: "#fb7185", glow: "rgba(251,113,133,0.35)" };
+      accuracy >= 75 ? { label: "A", color: "#34d399", glow: "rgba(52,211,153,0.35)" } :
+        accuracy >= 60 ? { label: "B", color: "#a78bfa", glow: "rgba(167,139,250,0.35)" } :
+          accuracy >= 45 ? { label: "C", color: "#fbbf24", glow: "rgba(251,191,36,0.35)" } :
+            { label: "D", color: "#fb7185", glow: "rgba(251,113,133,0.35)" };
 
   const scorePercent =
     result?.total > 0
@@ -132,9 +132,9 @@ export default function ResultPage() {
               <div className="grade-letter">{grade.label}</div>
               <p className="grade-desc">
                 {grade.label === "S" ? "Outstanding" :
-                 grade.label === "A" ? "Excellent" :
-                 grade.label === "B" ? "Good" :
-                 grade.label === "C" ? "Average" : "Needs Work"}
+                  grade.label === "A" ? "Excellent" :
+                    grade.label === "B" ? "Good" :
+                      grade.label === "C" ? "Average" : "Needs Work"}
               </p>
             </div>
 
@@ -167,10 +167,10 @@ export default function ResultPage() {
           {/* STAT CARDS */}
           <div className="stats-grid rp-reveal" style={{ "--delay": "160ms" }}>
             {[
-              { label: "Correct",  value: result.correct, icon: "✓", color: "#34d399", glow: "rgba(52,211,153,0.2)",  border: "rgba(52,211,153,0.35)"  },
-              { label: "Wrong",    value: result.wrong,   icon: "✗", color: "#fb7185", glow: "rgba(251,113,133,0.2)", border: "rgba(251,113,133,0.35)" },
-              { label: "Total",    value: result.total,   icon: "#", color: "#94a3b8", glow: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)"  },
-              { label: "Score",    value: result.score,   icon: "★", color: "#22d3ee", glow: "rgba(34,211,238,0.2)",  border: "rgba(34,211,238,0.35)"  },
+              { label: "Correct", value: result.correct, icon: "✓", color: "#34d399", glow: "rgba(52,211,153,0.2)", border: "rgba(52,211,153,0.35)" },
+              { label: "Wrong", value: result.wrong, icon: "✗", color: "#fb7185", glow: "rgba(251,113,133,0.2)", border: "rgba(251,113,133,0.35)" },
+              { label: "Total", value: result.total, icon: "#", color: "#94a3b8", glow: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)" },
+              { label: "Score", value: result.score, icon: "★", color: "#22d3ee", glow: "rgba(34,211,238,0.2)", border: "rgba(34,211,238,0.35)" },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -228,10 +228,21 @@ export default function ResultPage() {
 
           {/* CTA */}
           <div className="cta-row rp-reveal" style={{ "--delay": "320ms" }}>
+
+            <button
+              className="btn-solution"
+              onClick={() => router.push(`/result/${id}/solutions`)}
+            >
+              View Solutions
+            </button>
+
             <button className="btn-back" onClick={() => router.push("/dashboard")}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
               Back to Dashboard
             </button>
+
           </div>
 
         </main>
@@ -576,4 +587,38 @@ const sharedStyles = `
     .rp-main { padding: 1.5rem 1rem 3.5rem; }
     .grade-letter { font-size: 3.8rem; }
   }
+
+  .btn-solution {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0.7rem 1.4rem;
+  border-radius: 10px;
+  border: 1px solid rgba(34,211,238,0.35);
+  background: linear-gradient(
+    135deg,
+    rgba(34,211,238,0.16),
+    rgba(167,139,250,0.12)
+  );
+  color: #22d3ee;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: -0.01em;
+}
+
+.btn-solution:hover {
+  transform: translateY(-2px);
+  border-color: #22d3ee;
+  box-shadow: 0 0 20px rgba(34,211,238,0.2);
+}
+
+.cta-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 `;

@@ -163,6 +163,26 @@ const GLOBAL_STYLES = `
     border-radius: 8px;
   }
 
+  /* ── Anti-copy protection ──────────────────────────────────────────────── */
+
+  /* Disable text selection everywhere on the exam root */
+  .exam-root {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Prevent mobile long-press callout (iOS Safari) */
+  .exam-root {
+    -webkit-touch-callout: none;
+  }
+
+  /* Prevent tap highlight flash on mobile that could expose selection */
+  .exam-root * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Responsive */
   @media (max-width: 640px) {
     .exam-layout { padding: 12px !important; }
@@ -183,6 +203,56 @@ function useGlobalStyles(css) {
     document.head.appendChild(style);
     return () => document.getElementById(id)?.remove();
   }, []);
+}
+
+// ── Anti-copy hook ────────────────────────────────────────────────────────
+// Attaches all copy/selection-prevention listeners to the exam root element.
+// Returns a ref callback to attach to the container div.
+function useAntiCopy() {
+  const [containerRef, setContainerRef] = useState(null);
+
+  useEffect(() => {
+    if (!containerRef) return;
+
+    // Block right-click context menu
+    const onContextMenu = (e) => e.preventDefault();
+
+    // Block copy, cut, paste at the DOM level
+    const onCopy = (e) => e.preventDefault();
+    const onCut  = (e) => e.preventDefault();
+
+    // Block keyboard shortcuts: Ctrl+C, Ctrl+X, Ctrl+A, Ctrl+U
+    // Uses keydown so it fires before the browser acts on the shortcut.
+    // We check both e.ctrlKey (Windows/Linux) and e.metaKey (Mac ⌘).
+    const BLOCKED_KEYS = new Set(["c", "x", "a", "u"]);
+    const onKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && BLOCKED_KEYS.has(e.key.toLowerCase())) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Prevent mouse-drag selection from being initiated
+    // selectstart fires right before the browser starts a text selection.
+    const onSelectStart = (e) => e.preventDefault();
+
+    containerRef.addEventListener("contextmenu",  onContextMenu,  true);
+    containerRef.addEventListener("copy",         onCopy,         true);
+    containerRef.addEventListener("cut",          onCut,          true);
+    containerRef.addEventListener("keydown",      onKeyDown,      true);
+    containerRef.addEventListener("selectstart",  onSelectStart,  true);
+
+    return () => {
+      containerRef.removeEventListener("contextmenu",  onContextMenu,  true);
+      containerRef.removeEventListener("copy",         onCopy,         true);
+      containerRef.removeEventListener("cut",          onCut,          true);
+      containerRef.removeEventListener("keydown",      onKeyDown,      true);
+      containerRef.removeEventListener("selectstart",  onSelectStart,  true);
+    };
+  }, [containerRef]);
+
+  // Return a stable ref-setter callback
+  return setContainerRef;
 }
 
 // ── Timer display component ───────────────────────────────────────────────
@@ -252,6 +322,9 @@ export default function ExamPage() {
 
   useGlobalStyles(GLOBAL_STYLES);
 
+  // Attach anti-copy protection to the exam root container
+  const antiCopyRef = useAntiCopy();
+
   // LOAD EXAM
   useEffect(() => {
     if (!id) return;
@@ -311,7 +384,8 @@ export default function ExamPage() {
   // ── Loading State ────────────────────────────────────────────────────────
   if (loading || !exam) {
     return (
-      <div className="exam-root" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+      // antiCopyRef is attached here too so protection is active during loading
+      <div ref={antiCopyRef} className="exam-root" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 24, zIndex: 1 }}>
           {/* Spinner */}
           <div style={{ position: "relative", width: 64, height: 64 }}>
@@ -348,7 +422,8 @@ export default function ExamPage() {
   const progressPct = (answeredCount / totalQ) * 100;
 
   return (
-    <div className="exam-root" style={{ minHeight: "100vh", position: "relative" }}>
+    // antiCopyRef attaches all event listeners to this top-level exam container
+    <div ref={antiCopyRef} className="exam-root" style={{ minHeight: "100vh", position: "relative" }}>
       <div
         className="exam-layout"
         style={{
